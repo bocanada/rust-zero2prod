@@ -1,7 +1,7 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpServer};
-use routes::{health_check, subscriptions};
+use routes::{health_check, subscribe};
 
 pub mod configuration;
 pub mod routes;
@@ -14,7 +14,7 @@ pub fn run(listener: TcpListener) -> std::io::Result<Server> {
     let server = HttpServer::new(|| {
         App::new()
             .route("/health_check", web::get().to(health_check))
-            .route("/subscriptions", web::post().to(subscriptions))
+            .route("/subscriptions", web::post().to(subscribe))
     })
     .listen(listener)?
     .run();
