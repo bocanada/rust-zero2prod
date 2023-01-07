@@ -11,6 +11,12 @@ if ! [ -x "$(command -v sqlx)" ]; then
     exit 1
 fi
 
+if ! [ -x "$(command -v psql)" ]; then
+    echo >&2 "Error: psql is not installed"
+    exit 1
+fi
+
+
 # Check if a custom user has been set, otherwise default to 'postgres'
 DB_USER=${POSTGRES_USER:=postgres}
 # Check if a custom password has been set, otherwise default to 'password'
@@ -36,7 +42,7 @@ fi
  
 # Keep pinging Postgres until it's ready to accept commands
 export PGPASSWORD="${DB_PASSWORD}"
-until docker exec zero2prod psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c '\q';
+until psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c '\q';
 do
     >&2 echo "Postgres is still unavailable - sleeping"
     sleep 1
