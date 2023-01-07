@@ -50,3 +50,5 @@ features = [
 once_cell = "1.17.0"
 reqwest = "0.11.13"
 
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
