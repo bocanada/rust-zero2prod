@@ -42,6 +42,23 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
     }
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct QueryData {
+    pub subscription_token: String,
+}
+
+#[tracing::instrument(
+    name = "Confirming a subscription",
+    skip(query, _pool),
+    fields(subscription_token = %query.subscription_token)
+)]
+pub async fn confirm_subscription(
+    query: web::Query<QueryData>,
+    _pool: web::Data<PgPool>,
+) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
 #[tracing::instrument(
     name = "Saving new subscriber details in the database",
     skip(new_subscriber, pool)

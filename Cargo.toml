@@ -49,13 +49,22 @@ features = [
     "offline",
 ]
 
+[dependencies.reqwest]
+version = "0.11.13"
+default-features = false
+features = [
+    "json",
+    "rustls-tls",
+]
+
 [dev-dependencies]
 claim = "0.5.0"
 fake = "2.5.0"
 once_cell = "1.17.0"
-reqwest = "0.11.13"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
+serde_json = "1.0.91"
+wiremock = "0.5.16"
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.
