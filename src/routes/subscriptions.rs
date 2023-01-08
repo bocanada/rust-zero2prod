@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
