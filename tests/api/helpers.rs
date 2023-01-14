@@ -1,10 +1,9 @@
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use std::net::TcpListener;
 use uuid::Uuid;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
-    email_client::EmailClient,
+    startup::{get_connection_pool, Application},
     telemetry::{get_subscriber, init_subscriber},
 };
 
@@ -33,36 +32,27 @@ pub async fn spawn_app() -> TestApp {
     // All other invocations will instead skip execution.
     Lazy::force(&TRACING);
 
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
-    let port = listener.local_addr().unwrap().port();
+    let config = {
+        let mut c = get_configuration().expect("Failed to read configuration.");
 
-    let mut config = get_configuration().expect("Failed to read configuration.");
+        c.database.database_name = Uuid::new_v4().to_string();
+        c.application.port = 0;
+        c
+    };
 
-    config.database.database_name = Uuid::new_v4().to_string();
+    configure_database(&config.database).await;
 
-    let conn_pool = configure_database(&config.database).await;
-
-    let sender_email = config
-        .email_client
-        .sender()
-        .expect("Invalid sender email address.");
-
-    let timeout = config.email_client.timeout();
-    let client = EmailClient::new(
-        config.email_client.base_url,
-        sender_email,
-        config.email_client.authorization_token,
-        timeout,
-    );
-
-    let server = zero2prod::startup::run(listener, conn_pool.clone(), client)
+    let server = Application::build(config.clone())
+        .await
         .expect("Failed to bind address");
 
-    tokio::spawn(server);
+    let port = server.port();
+
+    tokio::spawn(server.run_until_stopped());
 
     TestApp {
         address: format!("http://127.0.0.1:{port}"),
-        db_pool: conn_pool,
+        db_pool: get_connection_pool(&config.database),
     }
 }
 
