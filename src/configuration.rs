@@ -14,7 +14,7 @@ pub struct Settings {
     pub email_client: EmailClientSettings,
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(serde::Deserialize, Debug, Clone)]
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
@@ -27,6 +27,7 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
+    pub base_url: String,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -93,7 +94,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
 
     // Initialise our configuration reader
     let settings = config::Config::builder()
-        // Add configuration values from a file named `configuration.yaml`
+        // Add configuration values from a file named `base.yaml`
         .add_source(config::File::from(config_dir.join("base.yaml")))
         .add_source(config::File::from(config_dir.join(environment_filename)))
         // Add settings from environment variables.

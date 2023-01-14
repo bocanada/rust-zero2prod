@@ -1,6 +1,6 @@
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
-use crate::routes::{confirm_subscription, health_check, subscribe};
+use crate::routes::{confirm, health_check, subscribe};
 
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
@@ -37,7 +37,7 @@ impl Application {
         );
 
         Ok(Self {
-            server: run(listener, db_pool, email_client)?,
+            server: run(listener, db_pool, email_client, config.application.base_url)?,
             port,
         })
     }
@@ -57,6 +57,8 @@ pub fn get_connection_pool(config: &DatabaseSettings) -> PgPool {
         .connect_lazy_with(config.with_db())
 }
 
+pub struct ApplicationBaseUrl(pub String);
+
 // We need to mark `run` as public.
 // It is no longer a binary entrypoint, therefore we can mark it as async
 // without having to use any proc-macro incantation.
@@ -64,21 +66,21 @@ pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_client: EmailClient,
+    base_url: String,
 ) -> std::io::Result<Server> {
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
+    let base_url = web::Data::new(ApplicationBaseUrl(base_url));
 
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
-            .route(
-                "/subscriptions/confirm",
-                web::get().to(confirm_subscription),
-            )
+            .route("/subscriptions/confirm", web::get().to(confirm))
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
+            .app_data(base_url.clone())
     })
     .listen(listener)?
     .run();
